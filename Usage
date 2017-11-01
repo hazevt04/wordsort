@@ -19,3 +19,16 @@ Trailing punctuation is considered part of the word.
 If no filename is provided then the words to be sorted will be entered
 at the command line. Cntrl+D when done.
 
+For reuse in code with GVIM substitutions:
+flags are:
+c
+r
+n
+l
+s
+a
+u
+h
+
+you probably won't need to deal with h beyond main()
+
