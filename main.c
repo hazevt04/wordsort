@@ -59,34 +59,34 @@ int main( int argc, char** argv ) {
                ( ( r_flag ) ? " in reverse order\n" : "\n" )
             ); 
             break;
-			case 'n':
-				n_flag = 1;
+         case 'n':
+            n_flag = 1;
             HDEBUG_PRINTF( "Sort as if numbers\n" ); 
-				break;
-			case 'l':
-				l_flag = 1;
+            break;
+         case 'l':
+            l_flag = 1;
             HDEBUG_PRINTF( "Sort by word length\n" ); 
-				break;
-			case 's':
-				s_flag = 1;
+            break;
+         case 's':
+            s_flag = 1;
             HDEBUG_PRINTF( "Sort by Scrabble scoring rules\n" ); 
-				break;
-			case 'a':
-				a_flag = 1;
+            break;
+         case 'a':
+            a_flag = 1;
             HDEBUG_PRINTF( "Sort lexicographically (same as default)\n" ); 
-				break;
-			case 'u':
-				u_flag = 1;
+            break;
+         case 'u':
+            u_flag = 1;
             HDEBUG_PRINTF( "Sort with no duplicates\n" ); 
-				break;
-			case 'c':
-				c_flag = 1;
+            break;
+         case 'c':
+            c_flag = 1;
             // Convert optarg to number
             HDEBUG_PRINTF( "Inside %s(): optarg is %s\n", __func__, optarg ); 
             c_flag_num_words = atoi(optarg);
             HDEBUG_PRINTF( "Sort lexicographically and only show %d words\n",
                c_flag_num_words ); 
-				break;
+            break;
          case '?':
             if ( optopt == 'c' ) {
                fprintf( stderr, "Option '-%c' requires an argument.\n", 
