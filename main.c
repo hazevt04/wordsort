@@ -3,29 +3,33 @@
 #include <stddef.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
+#include <assert.h>
 #include <ctype.h>
 
 #include "my_util.h"
 
+#include "ws_word.h"
+
 #define NO_FLAG_SELECT  0
 
+// "One-Hot" Select Values
 #define C_FLAG_SELECT ( ( unsigned int ) 1 << 0 )
 
 // Sort order flags, mutually exclusive
-#define R_FLAG_SELECT ( ( unsigned int ) 1 << 1 )
-#define N_FLAG_SELECT ( ( unsigned int ) 1 << 2 )
-#define L_FLAG_SELECT ( ( unsigned int ) 1 << 3 )
-#define S_FLAG_SELECT ( ( unsigned int ) 1 << 4 )
-#define A_FLAG_SELECT ( ( unsigned int ) 1 << 5 )
+#define N_FLAG_SELECT ( ( unsigned int ) 1 << 1 )
+#define L_FLAG_SELECT ( ( unsigned int ) 1 << 2 )
+#define S_FLAG_SELECT ( ( unsigned int ) 1 << 3 )
+#define A_FLAG_SELECT ( ( unsigned int ) 1 << 4 )
 
-// Optional flag adding to the sort order flag
+// Optional flags adding to the sort order flags
+#define R_FLAG_SELECT ( ( unsigned int ) 1 << 5 )
 #define U_FLAG_SELECT ( ( unsigned int ) 1 << 6 )
 
 #define H_FLAG_SELECT ( ( unsigned int ) 1 << 7 )
 
 
 
-#define NUM_FLAGS 8
 
 #define MAX_NUM_CHARS 80
 #define MAX_NUM_FILES 100
@@ -113,20 +117,19 @@ int main( int argc, char** argv ) {
    int c_flag_num_words = 0;
    
    int opt;
+   bool do_unique = false;
+   bool do_reverse = false;
 
    while( ( opt = getopt( argc, argv, "rnlsauhc:" ) ) != -1 ) {
       // Parse option arguments
       switch( opt ) {
-         case 'h':
-            flag_select = H_FLAG_SELECT;
-            usage( argv );
-            break;
          case 'r':
             // Toggle r_flag whenever it is seen
             flag_select ^= R_FLAG_SELECT; 
             HDEBUG_PRINTF( "Sort%s",
                ( ( flag_select == R_FLAG_SELECT ) ? " in reverse order\n" : "\n" )
             ); 
+            do_reverse !do_reverse;
             break;
          case 'n':
             flag_select = N_FLAG_SELECT;
@@ -147,6 +150,7 @@ int main( int argc, char** argv ) {
             break;
          case 'u':
             flag_select |= U_FLAG_SELECT;
+            do_unique = true;
             HDEBUG_PRINTF( "Sort with no duplicates\n" ); 
             break;
          case 'c':
@@ -157,6 +161,10 @@ int main( int argc, char** argv ) {
             HDEBUG_PRINTF( "Sort lexicographically and only show %d words\n",
                c_flag_num_words ); 
             break;
+         case 'h':
+            flag_select = H_FLAG_SELECT;
+            usage( argv );
+            return EXIT_SUCCESS;
          case '?':
             if ( optopt == 'c' ) {
                fprintf( stderr, "Option '-%c' requires an argument.\n", 
@@ -172,7 +180,9 @@ int main( int argc, char** argv ) {
             return EXIT_FAILURE;
       } // end of switch
    } // end of while
+  
    
+
    HDEBUG_PRINTF( "Inside %s(): optind is %d\n", 
       __func__, optind ); 
    HDEBUG_PRINTF( "Inside %s(): argc is %d\n", 
@@ -181,17 +191,24 @@ int main( int argc, char** argv ) {
    int num_files = argc - optind;
 
    HDEBUG_PRINTF( "Inside %s(): num_files is %d\n", __func__, num_files ); 
-   
+
+   bool do_unique = ( (flag_select & (U_FLAG_SELECT)) == U_FLAG_SELECT );
+   bool do_reverse = ( (flag_select & (R_FLAG_SELECT)) == R_FLAG_SELECT );
+
    int file_index = 0;
    char **file_names;
    int argv_len;
 
-   char** words;
    char* line;
    char* token_str;
-   int token_len;
-   int word_num = 0;
-
+   int token_len = 0;
+   char* word;
+   int word_len = 0;
+   int num_ws_words = 0;
+   ws_word_t *ws_words_head;
+   
+   initialize_ws_words( ws_words_head );
+   
    if ( num_files > 0 ) {
       file_index = 0;
       file_names = ( char** )malloc( num_files * sizeof( char * ) );
@@ -218,11 +235,11 @@ int main( int argc, char** argv ) {
 
    } else {
       
-      line = ( char * )malloc( MAX_NUM_CHARS );
-      token_str = ( char * )malloc( MAX_NUM_CHARS );
+      // Try to allocate arrays for line and token_str.
+      // Exit if errors
+      MALLOC_AND_CHECK_ERROR( line, char, MAX_NUM_CHARS );
+      MALLOC_AND_CHECK_ERROR( token_str, char, MAX_NUM_CHARS );
 
-      words = ( char ** )malloc( MAX_NUM_WORDS * sizeof( char * ) );
-      
       HDEBUG_PRINTF( "Inside %s(): Need to get input from user: ", __func__ ); 
 
       printf( "Enter words (100 max, each a max of 80 characters; "
@@ -230,7 +247,7 @@ int main( int argc, char** argv ) {
 
       while( fgets(line, MAX_NUM_CHARS, stdin ) != NULL ) {
          token_str = strtok( line, " \n" );
-         HDEBUG_PRINTF( "Inside %s(): token_str is '%s'\n", 
+         HDEBUG_PRINTF( "Inside %s(): token is '%s'\n", 
             __func__, token_str ); 
 
          while( token_str != NULL ) {
@@ -240,32 +257,40 @@ int main( int argc, char** argv ) {
                __func__, word_num ); 
             HDEBUG_PRINTF( "Inside %s():\tWhile loop. Token len is %d:\n", 
                __func__, token_len ); 
-
-            words[word_num] =  ( char* )malloc( token_len + 1 );
             
-            strcpy( words[word_num], token_str );
-            HDEBUG_PRINTF( "Inside %s():\tWhile loop. After strcpy, "
-                  "words[%d] is %s.\n", 
-               __func__, word_num, words[word_num] ); 
+            word_len = token_len;
 
-            words[word_num][token_len] = '\0';
+            HDEBUG_PRINTF( "Inside %s():\tWhile loop. Word len is %d", 
+               __func__, word_len ); 
 
-            word_num++;
+            // Try to allocate array for word
+            // Exit if error
+            MALLOC_AND_CHECK_ERROR( word, char, ( word_len + 1 ) );
 
+            strcpy( word, token_str );
+            word[word_len] = '\0';
+
+            // Try to make a new ws_word_t node.
+            // This won't do anything if -u and the word is already in ws_words
+            new_ws_word = create_ws_word( word, word_len, ws_words_head );
+            insert_ws_word_sorted( new_ws_word, ws_words_head, &num_ws_words, do_unique, comp_func );
+
+            HDEBUG_PRINTF( "Inside %s(): After insert_ws_word_sorted for word %s num_ws_words is %d\n", 
+               __func__, word, num_ws_words );
+
+            // Get the next token from line
             token_str = strtok( NULL, " " );
+
          } // end of while( token_str != NULL )
       } // end of while( fgets(line, MAX_NUM_CHARS, stdin ) != NULL )
 
-      HDEBUG_PRINTF( "Inside %s(): You typed ", __func__ ); 
-      for( int i = 0; i < word_num; i++ ) {
-         HDEBUG_PRINTF( "%s ", words[i] ); 
-      } 
-      HDEBUG_PRINTF( "\n" );
+      print_flag_select( flag_select );
+      HDEBUG_PRINTF( "\n" ); 
+
+      HDEBUG_PRINTF( "Inside %s(): Print Sorted Words", __func__ ); 
+      print_ws_words( num_ws_words, ws_words_head );
    }
 
-   print_flag_select( flag_select );
-   HDEBUG_PRINTF( "Inside %s(): c_flag_num_words is %d\n", 
-      __func__, c_flag_num_words ); 
 
    return EXIT_SUCCESS;
 } 
