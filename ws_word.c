@@ -3,11 +3,11 @@
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
+#include <ctype.h>
 #include <stdbool.h>
 
 
 #include "my_util.h"
- 
 
 #include "ws_word.h"
 
@@ -27,34 +27,41 @@ int calc_scrabble_score( char *word, int word_len ) {
 
    for( int i = 0; i < word_len; i++ ) {
       // Get the scrabbble score for the character at index i in the word
-      int scrabble_index = word[i] - 'a';
+      int scrabble_index = tolower( word[i] ) - 'a';
 
-      HDEBUG_PRINTF( "Inside %s(): word[%d] is %c\n", 
-         __func__, i, word[i] ); 
+      HDEBUG_PRINTF( "Inside %s(): word[%d] (lowercase) is %c\n", 
+         __func__, i, tolower( word[i] ) ); 
       HDEBUG_PRINTF( "Inside %s(): 'a' as an int is %d\n", __func__, ( ( int )'a' ) ); 
-      HDEBUG_PRINTF( "Inside %s(): %d: scrabble index is %d\n", 
-         __func__, scrabble_index ); 
+      HDEBUG_PRINTF( "Inside %s(): %d: scrabble index is %d, '%c'\n", 
+         __func__, i, scrabble_index, scrabble_letter_scores[scrabble_index][0]  ); 
+
+      HDEBUG_PRINTF( "Inside %s(): scrabble score for '%c' is %d\n\n", __func__,
+        scrabble_letter_scores[scrabble_index][0], scrabble_letter_scores[scrabble_index][1]  ); 
 
       // Accumulate the scrabble score via lookup
       scrabble_score += scrabble_letter_scores[scrabble_index][1];
-   } 
+   }
+
+   HDEBUG_PRINTF( "Inside %s(): Scrabble Score for %s is %d\n\n", 
+      __func__, word, scrabble_score ); 
+   return scrabble_score; 
 } // end of calc_scrabble_score( ...
 
 void initialize_ws_words( ws_word_t *ws_words ) {
-   *ws_words = NULL;
+   ws_words = NULL;
 }
 
 void destroy_ws_words( ws_word_t *ws_words ) {
    assert( ws_words != NULL );
 
-   ws_word_t *curr_ptr = ws_words;
+   ws_word_t *curr_ws_word = ws_words;
 
    // Free the char arrays in each ws_word_t node
-   while( curr_ptr != NULL ) {
-      FREE_AND_NULL_PTR( curr_ptr->words );
-      curr_ptr = curr_ptr->next;
+   while( curr_ws_word != NULL ) {
+      FREE_AND_NULL_PTR( curr_ws_word->word );
+      curr_ws_word = curr_ws_word->next;
    } 
-   // curr_ptr will be NULL here
+   // curr_ws_word will be NULL here
    FREE_AND_NULL_PTR( ws_words );
 }
 
@@ -64,18 +71,18 @@ bool is_ws_words_empty( const ws_word_t *ws_words ) {
    return ( ws_words == NULL );
 }
 
-ws_word_t *find_ws_word( const ws_word_t *key_ws_word, const ws_word_t *ws_words ) {
-   assert( word != NULL );
+ws_word_t *find_ws_word( const ws_word_t *key_ws_word, ws_word_t *ws_words ) {
+   assert( key_ws_word != NULL );
    assert( ws_words != NULL );
 
-   ws_word_t curr_ptr = ws_words;
-   while( curr_ptr != NULL ) {
-      if ( strcmp( key_ws_word->word, curr_ptr->word ) == 0 ) {
-         return curr_ptr;
+   ws_word_t *curr_ws_word = ws_words;
+   while( curr_ws_word != NULL ) {
+      if ( strcmp( key_ws_word->word, curr_ws_word->word ) == 0 ) {
+         return curr_ws_word;
       }
-      curr_ptr = curr_ptr->next;
+      curr_ws_word = curr_ws_word->next;
    } 
-   return curr_ptr;
+   return curr_ws_word;
 }
 
 // Creates a new ws_word_t node and returns a pointer 
@@ -125,7 +132,7 @@ ws_word_t *create_ws_word( char *word, int word_len ) {
 } // ws_word_t *create_ws_word(  
 
 
-void print_ws_words( int num_words_to_print, const ws_word_t *ws_words, bool do_unique ) {
+void print_ws_words( int num_words_to_print, ws_word_t *ws_words, bool do_unique ) {
    if ( ws_words == NULL ) {
       printf( "EMPTY.\n" ); 
       return;
@@ -133,7 +140,7 @@ void print_ws_words( int num_words_to_print, const ws_word_t *ws_words, bool do_
 
    ws_word_t *curr_ws_word = ws_words;
    // Line 1
-   printf( "%80s   %5d   %14s\n",
+   printf( "%80s   %5s   %14s\n",
       "Word","Length","Scrabble Score" );
 
    // Line 2
@@ -150,7 +157,7 @@ void print_ws_words( int num_words_to_print, const ws_word_t *ws_words, bool do_
             curr_ws_word->word, curr_ws_word->word_len, curr_ws_word->scrabble_score 
          );
       }
-      cur_ws_word = ws_words->next;
+      curr_ws_word = curr_ws_word->next;
    } // end of while 
    printf( "\n" ); 
 }
@@ -162,7 +169,9 @@ void insert_ws_word( ws_word_t *new_ws_word, ws_word_t *ws_words ) {
     
    ws_word_t *old_next = ws_words->next;
    ws_words->next = new_ws_word;
+   new_ws_word->count++;
    new_ws_word->next = old_next;
+
 }
 
 ///////////////////////////////////////////////
@@ -171,16 +180,20 @@ void insert_ws_word( ws_word_t *new_ws_word, ws_word_t *ws_words ) {
 int word_cmp( const ws_word_t *left, const ws_word_t *right ) {
    assert( left != NULL );
    assert( right != NULL );
+	assert( left->word != NULL );
+	assert( right->word != NULL );
 
-   return strcmp( left, right );
+   return strcmp( left->word, right->word );
 }
 
 
 int word_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
    assert( left != NULL );
    assert( right != NULL );
+	assert( left->word != NULL );
+	assert( right->word != NULL );
 
-   return strcmp( right, left );
+   return strcmp( right->word, left->word );
 }
 
 /////////////////////////////////////////
@@ -204,65 +217,74 @@ int word_len_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
 /////////////////////////////////////////
 // WORDS AS NUM COMPARISON FUNCTIONS
 /////////////////////////////////////////
-int words_as_num_cmp( const ws_word_t *left, const ws_word_t *right ) {
+int word_as_num_cmp( const ws_word_t *left, const ws_word_t *right ) {
    assert( left != NULL );
    assert( right != NULL );
+	assert( left->word != NULL );
+	assert( right->word != NULL );
    
-   return ( atoi( left->word ) - atoi( right-word ) );
+   return ( atoi( left->word ) - atoi( right->word ) );
 }
 
-int words_as_num_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
+int word_as_num_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
    assert( left != NULL );
    assert( right != NULL );
+	assert( left->word != NULL );
+	assert( right->word != NULL );
    
-   return ( atoi( right->word ) - atoi( left-word ) );
+   return ( atoi( right->word ) - atoi( left->word ) );
 }
 
-int ( *select_cmp_func( int select ) ) ( const ws_word_t *left, const ws_word_t *right ) {
+
+/////////////////////////////////////////
+// SCRABBLE SCORE COMPARISON FUNCTIONS
+/////////////////////////////////////////
+int scrabble_score_cmp( const ws_word_t *left, const ws_word_t *right ) {
+   assert( left != NULL );
+   assert( right != NULL );
+  
+   return ( left->scrabble_score - right->scrabble_score ); 
+}
+
+
+int scrabble_score_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
+   assert( left != NULL );
+   assert( right != NULL );
+  
+   return ( right->scrabble_score - left->scrabble_score ); 
+}
+
+
+// Comparison Function Selector Function
+int ( *select_cmp_func( int select, bool do_reverse ) ) ( const ws_word_t *left, const ws_word_t *right ) {
    int ( *func_ptr ) ( const ws_word_t *left, const ws_word_t *right );
 
    HDEBUG_PRINTF( "Inside %s(): select (in hex) is %#x\n", 
-      __func__, select ); 
-   int u_flag_masked_sel = select & ~(U_FLAG_SELECT); 
+      __func__, select );
 
-   HDEBUG_PRINTF( "Inside %s(): ~(U_FLAG_SELECT) (in hex) is %#x\n", 
-      __func__, ~(U_FLAG_SELECT) );
-
-   HDEBUG_PRINTF( "Inside %s(): masked_sel (in hex) is %#x\n", 
-      __func__, u_flag_masked_sel ); 
-
-   switch( u_flag_masked_sel ) {
-		case C_FLAG_SELECT:
-			HDEBUG_PRINTF( "c flag set.\n" );
-         func_ptr = word_cmp;
+   switch( select ) {
+		case N_ORDER_SELECT:
+			HDEBUG_PRINTF( "(-n) order as if numbers selected.\n" );
+         func_ptr = do_reverse ? word_as_num_cmp_rev : word_as_num_cmp;
 			break;
-		case R_FLAG_SELECT:
-			HDEBUG_PRINTF( "r flag set.\n" );
-         func_ptr = 
+		case L_ORDER_SELECT:
+			HDEBUG_PRINTF( "(-l) order by word len selected.\n" );
+         func_ptr = do_reverse ? word_len_cmp_rev : word_len_cmp;
 			break;
-		case N_FLAG_SELECT:
-			HDEBUG_PRINTF( "n flag set.\n" );
+		case S_ORDER_SELECT:
+			HDEBUG_PRINTF( "(-s) order by scrabble score selected.\n" );
+         func_ptr = do_reverse ? scrabble_score_cmp_rev : scrabble_score_cmp;
 			break;
-		case L_FLAG_SELECT:
-			HDEBUG_PRINTF( "l flag set.\n" );
-			break;
-		case S_FLAG_SELECT:
-			HDEBUG_PRINTF( "s flag set.\n" );
-			break;
-		case A_FLAG_SELECT:
-			HDEBUG_PRINTF( "a flag set.\n" );
-			break;
-		case H_FLAG_SELECT:
-			HDEBUG_PRINTF( "h flag set.\n" );
-			break;
-      case NO_FLAG_SELECT:
-			HDEBUG_PRINTF( "no flag set.\n" );
+		case A_ORDER_SELECT:
+			HDEBUG_PRINTF( "(-a) order lexicographically selected.\n" );
+         func_ptr = do_reverse ? word_cmp_rev : word_cmp;
 			break;
       default:
-         fprintf( stderr, "Inside %s(): ERROR: Invalid flag select: %#x\n", 
+         fprintf( stderr, "Inside %s(): ERROR: Invalid order select: %#x\n", 
             __func__, select  ); 
          exit(EXIT_FAILURE);
    }
+   return func_ptr;
    
 }
 
@@ -271,28 +293,34 @@ int ( *select_cmp_func( int select ) ) ( const ws_word_t *left, const ws_word_t 
 // Last arg is a function pointer to the comparison function 
 // to determine where the new ws_word_t is inserted into the linked list
 void insert_ws_word_sorted( ws_word_t *new_ws_word, ws_word_t *ws_words,
-      int *num_ws_words, bool do_unique, int ( *comp )( ws_word_t *, ws_word_t * ) ) {
+      int *num_ws_words, bool do_unique, int ( *comp )( const ws_word_t *, const ws_word_t * ) ) {
 
    assert( new_ws_word != NULL );
    assert( comp != NULL );
    
    ws_word_t *insertion_ptr = ws_words;
-   ws_word_t *found_ptr = ws_words;
+   ws_word_t *search_ptr = ws_words;
+
+   ws_word_t *found_ptr;
    ws_word_t *result_ptr;
 
    int found_index = 0;
 
    if ( do_unique && ( ws_words != NULL ) ) {
-      bool word_found = false;
       
       HDEBUG_PRINTF( "Inside %s(): do_unique specified\n", 
          __func__ ); 
       
-      word_found = find_word( new_ws_word, ws_words );
-      if ( word_found != NULL ) {
+      found_ptr = find_ws_word( new_ws_word, search_ptr );
+      if ( found_ptr != NULL ) {
+         HDEBUG_PRINTF( "Inside %s(): found_ptr->count is %d\n",
+            __func__, found_ptr->count ); 
          HDEBUG_PRINTF( "Inside %s(): do_unique specified and Word '%s' already in ws_words.\n",
-             __func__, word ); 
-         word_found->count++;
+             __func__, new_ws_word->word ); 
+         found_ptr->count++;
+
+         HDEBUG_PRINTF( "Inside %s(): found_ptr->count incremented to %d\n",
+            __func__, found_ptr->count ); 
          return;
       }      
    }
@@ -307,7 +335,11 @@ void insert_ws_word_sorted( ws_word_t *new_ws_word, ws_word_t *ws_words,
    } 
 
    insert_ws_word( new_ws_word, insertion_ptr );
-   *num_words++;
+
+   *num_ws_words++;
+   
+   HDEBUG_PRINTF( "Inside %s(): Num words incremented to %d\n",
+      __func__, *num_ws_words ); 
 
 }
 

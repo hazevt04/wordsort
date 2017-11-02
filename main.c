@@ -11,29 +11,7 @@
 
 #include "ws_word.h"
 
-#define NO_FLAG_SELECT  0
 
-// "One-Hot" Select Values
-#define C_FLAG_SELECT ( ( unsigned int ) 1 << 0 )
-
-// Sort order flags, mutually exclusive
-#define N_FLAG_SELECT ( ( unsigned int ) 1 << 1 )
-#define L_FLAG_SELECT ( ( unsigned int ) 1 << 2 )
-#define S_FLAG_SELECT ( ( unsigned int ) 1 << 3 )
-#define A_FLAG_SELECT ( ( unsigned int ) 1 << 4 )
-
-// Optional flags adding to the sort order flags
-#define R_FLAG_SELECT ( ( unsigned int ) 1 << 5 )
-#define U_FLAG_SELECT ( ( unsigned int ) 1 << 6 )
-
-#define H_FLAG_SELECT ( ( unsigned int ) 1 << 7 )
-
-
-
-
-#define MAX_NUM_CHARS 80
-#define MAX_NUM_FILES 100
-#define MAX_NUM_WORDS 100
 
 void usage( char **argv ) {
    printf( "%s <options> <optional filename>\n", argv[0] );
@@ -59,50 +37,27 @@ void usage( char **argv ) {
    printf( "\n" ); 
 }
 
-void print_flag_select( int flag_sel ) {
-   HDEBUG_PRINTF( "Inside %s(): flag_sel (in hex) is %#x\n", 
-      __func__, flag_sel ); 
-   int u_flag_masked_sel = flag_sel & ~(U_FLAG_SELECT); 
+void print_order_select( int order_select ) {
+   HDEBUG_PRINTF( "Inside %s(): order_select (in hex) is %#x\n", 
+      __func__, order_select ); 
 
-   HDEBUG_PRINTF( "Inside %s(): ~(U_FLAG_SELECT) (in hex) is %#x\n", 
-      __func__, ~(U_FLAG_SELECT) );
-
-   HDEBUG_PRINTF( "Inside %s(): masked_sel (in hex) is %#x\n", 
-      __func__, u_flag_masked_sel ); 
-
-   switch( u_flag_masked_sel ) {
-		case C_FLAG_SELECT:
-			printf( "c flag set.\n" );
+   switch( order_select ) {
+		case N_ORDER_SELECT:
+			printf( "(-n) numerical order selected.\n" );
 			break;
-		case R_FLAG_SELECT:
-			printf( "r flag set.\n" );
+		case L_ORDER_SELECT:
+			printf( "(-l) length order selected.\n" );
 			break;
-		case N_FLAG_SELECT:
-			printf( "n flag set.\n" );
+		case S_ORDER_SELECT:
+			printf( "(-s) Scrabble Score order selected.\n" );
 			break;
-		case L_FLAG_SELECT:
-			printf( "l flag set.\n" );
-			break;
-		case S_FLAG_SELECT:
-			printf( "s flag set.\n" );
-			break;
-		case A_FLAG_SELECT:
-			printf( "a flag set.\n" );
-			break;
-		case H_FLAG_SELECT:
-			printf( "h flag set.\n" );
-			break;
-      case NO_FLAG_SELECT:
-			printf( "no flag set.\n" );
+		case A_ORDER_SELECT:
+			printf( "(-a) Lexicographical order selected.\n" );
 			break;
       default:
-         fprintf( stderr, "Inside %s(): ERROR: Invalid flag select: %#x\n", 
-            __func__, flag_sel  ); 
+         fprintf( stderr, "Inside %s(): ERROR: Invalid order select: %#x\n", 
+            __func__, order_select  ); 
          exit(EXIT_FAILURE);
-   }
-   // Not mutually exclusive with the other flags
-   if ( (flag_sel & U_FLAG_SELECT) == U_FLAG_SELECT ) {
-		printf( "u flag set.\n" );
    }
 
 }
@@ -110,59 +65,58 @@ void print_flag_select( int flag_sel ) {
 int main( int argc, char** argv ) {
    // "One-hot" selecton (only one bit can be set at a time)
    // The last option passed in getopt will ultimately
-   // determine the final flag_select, which is 
+   // determine the final order_select, which is 
    // guaranteed to only have one flag set by the "one-hot" selection.
-   int flag_select = NO_FLAG_SELECT;
+
+   // Defaul order select is '-a', lexicographical
+   int order_select = A_ORDER_SELECT;
 
    int c_flag_num_words = 0;
+   bool do_reverse = false;
+   bool do_unique = false;
+   bool do_first_n = false;
    
    int opt;
-   bool do_unique = false;
-   bool do_reverse = false;
 
    while( ( opt = getopt( argc, argv, "rnlsauhc:" ) ) != -1 ) {
       // Parse option arguments
       switch( opt ) {
          case 'r':
-            // Toggle r_flag whenever it is seen
-            flag_select ^= R_FLAG_SELECT; 
+            do_reverse = !do_reverse;
             HDEBUG_PRINTF( "Sort%s",
-               ( ( flag_select == R_FLAG_SELECT ) ? " in reverse order\n" : "\n" )
+               ( ( do_reverse ) ? " in reverse order\n" : "\n" )
             ); 
-            do_reverse !do_reverse;
             break;
          case 'n':
-            flag_select = N_FLAG_SELECT;
+            order_select = N_ORDER_SELECT;
             HDEBUG_PRINTF( "Sort as if numbers\n" ); 
             break;
          case 'l':
-            flag_select = L_FLAG_SELECT;
+            order_select = L_ORDER_SELECT;
             HDEBUG_PRINTF( "Sort by word length\n" ); 
             break;
          case 's':
-            flag_select = S_FLAG_SELECT;
+            order_select = S_ORDER_SELECT;
             HDEBUG_PRINTF( "Sort by Scrabble scoring rules\n" ); 
             break;
          case 'a':
-            flag_select = A_FLAG_SELECT;
+            order_select = A_ORDER_SELECT;
             HDEBUG_PRINTF( "Sort lexicographically "
                   "(same as default)\n" ); 
             break;
          case 'u':
-            flag_select |= U_FLAG_SELECT;
             do_unique = true;
             HDEBUG_PRINTF( "Sort with no duplicates\n" ); 
             break;
          case 'c':
-            flag_select = C_FLAG_SELECT;
-            // Convert optarg to number
             HDEBUG_PRINTF( "Inside %s(): optarg is %s\n", __func__, optarg ); 
+            do_first_n = true;
+            // Convert optarg to number
             c_flag_num_words = atoi(optarg);
             HDEBUG_PRINTF( "Sort lexicographically and only show %d words\n",
                c_flag_num_words ); 
             break;
          case 'h':
-            flag_select = H_FLAG_SELECT;
             usage( argv );
             return EXIT_SUCCESS;
          case '?':
@@ -180,8 +134,21 @@ int main( int argc, char** argv ) {
             return EXIT_FAILURE;
       } // end of switch
    } // end of while
+ 
+   // Select comp_func based on flags
+   int ( *comp_func ) ( const ws_word_t *left, const ws_word_t *right );
+   comp_func = select_cmp_func( order_select, do_reverse );
   
-   
+   HDEBUG_PRINTF( "Inside %s(): word_cmp() ptr is %p\n", __func__, word_cmp );  
+   HDEBUG_PRINTF( "Inside %s(): word_cmp_rev() ptr is %p\n", __func__, word_cmp_rev );  
+   HDEBUG_PRINTF( "Inside %s(): word_len_cmp() ptr is %p\n", __func__, word_len_cmp );  
+   HDEBUG_PRINTF( "Inside %s(): word_len_cmp_rev() ptr is %p\n", __func__, word_len_cmp_rev );  
+   HDEBUG_PRINTF( "Inside %s(): word_as_num_cmp() ptr is %p\n", __func__, word_as_num_cmp );  
+   HDEBUG_PRINTF( "Inside %s(): word_as_num_cmp_rev() ptr is %p\n", __func__, word_as_num_cmp_rev );  
+   HDEBUG_PRINTF( "Inside %s(): scrabble_score_cmp() ptr is %p\n", __func__, scrabble_score_cmp );  
+   HDEBUG_PRINTF( "Inside %s(): scrabble_score_cmp_rev() ptr is %p\n\n", __func__, scrabble_score_cmp_rev );
+
+   HDEBUG_PRINTF( "Inside %s(): The selected function, comp_func is %p\n\n", __func__, comp_func ); 
 
    HDEBUG_PRINTF( "Inside %s(): optind is %d\n", 
       __func__, optind ); 
@@ -191,9 +158,6 @@ int main( int argc, char** argv ) {
    int num_files = argc - optind;
 
    HDEBUG_PRINTF( "Inside %s(): num_files is %d\n", __func__, num_files ); 
-
-   bool do_unique = ( (flag_select & (U_FLAG_SELECT)) == U_FLAG_SELECT );
-   bool do_reverse = ( (flag_select & (R_FLAG_SELECT)) == R_FLAG_SELECT );
 
    int file_index = 0;
    char **file_names;
@@ -206,6 +170,7 @@ int main( int argc, char** argv ) {
    int word_len = 0;
    int num_ws_words = 0;
    ws_word_t *ws_words_head;
+   ws_word_t *new_ws_word;
    
    initialize_ws_words( ws_words_head );
    
@@ -254,7 +219,7 @@ int main( int argc, char** argv ) {
             token_len = strlen( token_str );
             
             HDEBUG_PRINTF( "Inside %s():\tWhile loop. Word Num is %d:\n", 
-               __func__, word_num ); 
+               __func__, num_ws_words ); 
             HDEBUG_PRINTF( "Inside %s():\tWhile loop. Token len is %d:\n", 
                __func__, token_len ); 
             
@@ -272,8 +237,9 @@ int main( int argc, char** argv ) {
 
             // Try to make a new ws_word_t node.
             // This won't do anything if -u and the word is already in ws_words
-            new_ws_word = create_ws_word( word, word_len, ws_words_head );
-            insert_ws_word_sorted( new_ws_word, ws_words_head, &num_ws_words, do_unique, comp_func );
+            new_ws_word = create_ws_word( word, word_len );
+            insert_ws_word_sorted( new_ws_word, ws_words_head, &num_ws_words, 
+               do_unique, comp_func );
 
             HDEBUG_PRINTF( "Inside %s(): After insert_ws_word_sorted for word %s num_ws_words is %d\n", 
                __func__, word, num_ws_words );
@@ -284,11 +250,22 @@ int main( int argc, char** argv ) {
          } // end of while( token_str != NULL )
       } // end of while( fgets(line, MAX_NUM_CHARS, stdin ) != NULL )
 
-      print_flag_select( flag_select );
+      print_order_select( order_select );
       HDEBUG_PRINTF( "\n" ); 
 
+      int num_print_words;
+      if ( do_first_n ) {
+         num_print_words = c_flag_num_words;
+         HDEBUG_PRINTF( "Inside %s(): Due to -c option, only printing %d words\n",
+            __func__, num_print_words ); 
+
+      } else {
+         num_print_words = num_ws_words;
+         HDEBUG_PRINTF( "Inside %s(): No -c option, printing all %d words\n",
+            __func__, num_print_words ); 
+      }
       HDEBUG_PRINTF( "Inside %s(): Print Sorted Words", __func__ ); 
-      print_ws_words( num_ws_words, ws_words_head );
+      print_ws_words( num_print_words, ws_words_head, do_unique );
    }
 
 
