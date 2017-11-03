@@ -22,11 +22,11 @@ void usage( char **argv ) {
    printf( "-l          Print the list of words sorted by lengths\n" );
    printf( "-s          Print the list of words sorted by their Scrabble scores\n" );
    printf( "-a          Print the list of words sorted lexicographically\n" );
-   printf( "-u          Print the list of words sorted lexicographically with no duplicates\n" );
+   printf( "-u          Print the list of words with no duplicates ( like uniq -u in UNIX )\n" );
    printf( "-h          Print help\n" );
    printf( "\n" );
-   printf( "Most recently seen option will take precedence. Example:\n" );
-   printf( "'ws -r -l file1' will print the words in file1 sorted by their lengths\n" );
+   printf( "Most recently seen order option will take precedence. Example:\n" );
+   printf( "'ws -s -l file1' will print the words in file1 sorted by their lengths\n" );
    printf( "\n" );
    printf( "Each pair of -r options cancels each other out.\n" );
    printf( "\n" );
@@ -146,7 +146,8 @@ int main( int argc, char** argv ) {
    HDEBUG_PRINTF( "Inside %s(): word_as_num_cmp() ptr is %p\n", __func__, word_as_num_cmp );  
    HDEBUG_PRINTF( "Inside %s(): word_as_num_cmp_rev() ptr is %p\n", __func__, word_as_num_cmp_rev );  
    HDEBUG_PRINTF( "Inside %s(): scrabble_score_cmp() ptr is %p\n", __func__, scrabble_score_cmp );  
-   HDEBUG_PRINTF( "Inside %s(): scrabble_score_cmp_rev() ptr is %p\n\n", __func__, scrabble_score_cmp_rev );
+   HDEBUG_PRINTF( "Inside %s(): scrabble_score_cmp_rev() ptr is %p\n\n", 
+         __func__, scrabble_score_cmp_rev );
 
    HDEBUG_PRINTF( "Inside %s(): The selected function, comp_func is %p\n\n", __func__, comp_func ); 
 
@@ -169,7 +170,7 @@ int main( int argc, char** argv ) {
    int token_len = 0;
    char** words;
    int* word_lengths;
-   int num_words;
+   int num_words = 0;
 
    int num_ws_words = 0;
    ws_word_t *ws_words_head = NULL;
@@ -310,8 +311,9 @@ int main( int argc, char** argv ) {
    }
 
    HDEBUG_PRINTF( "Inside %s(): Final Print of Sorted Words: \n", __func__ ); 
-   print_ws_words( num_print_words, ws_words_head, do_unique );
+   print_ws_words( num_print_words, ws_words_head, do_unique, true );
 
+   destroy_ws_words( ws_words_head );
 
    return EXIT_SUCCESS;
 } 

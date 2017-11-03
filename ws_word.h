@@ -48,7 +48,7 @@ void destroy_ws_words( ws_word_t *ws_words );
 // Still need to insert the node separately
 ws_word_t *create_ws_word( char *word, int word_len );
 
-void print_ws_words( int num_words_to_print, ws_word_t *ws_words, bool do_unique );
+void print_ws_words( int num_words_to_print, ws_word_t *ws_words, bool do_unique, bool show_counts );
 
 // Normal insert. No consideration of order
 //void insert_ws_word( ws_word_t *new_ws_word, ws_word_t *ws_words, int num_words );
