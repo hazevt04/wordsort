@@ -1,12 +1,14 @@
 TARGET_EXEC = ws
 CC = gcc
-DEBUG = -DHDEBUG
 CFLAGS = -g -I../../ $(DEBUG)
 
 .PHONY: default all clean
 
 default: $(TARGET_EXEC)
 all: default	
+
+debug: DEBUG = -DHDEBUG
+debug: $(TARGET_EXEC)
 
 # Reminder:
 # $@ file name of the target of the rule

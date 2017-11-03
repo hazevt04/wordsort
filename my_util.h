@@ -6,6 +6,27 @@
 #include <stddef.h>
 #include <assert.h>
 
+///////////////////////////////
+// PROJECT 2 COMP 3220
+// Wordsort (ws)
+// Glenn Hazelwood
+// 11/3/2017
+//
+// my_util.h
+//
+// Header file with my favorite
+// macro functions and reusable
+// functions used in Project 2's
+// Wordsort
+//
+// Also includes a functions
+// for:
+// left circular shift (lcshift()),
+// right circular shift (lcshift()),
+// anf 
+// getting words from a file
+//////////////////////////////
+
 #define MAX_NUM_CHARS 80
 #define MAX_NUM_FILES 100
 #define MAX_NUM_WORDS 100
@@ -74,7 +95,10 @@ inline unsigned int rcshift(unsigned int var, int num_bits) {
    return (var << (32-num_bits)) | (var >> num_bits);
 }
 
-void get_words_from_file( char *file_name, char **words, int *num_words );
+// If file_name exists, opens that file and reads words from it. Saves the words in a 2-D
+// array called words and the lengths in an array called word_lengths. Also increments the 
+// number or words in the 2-D words array to allow the words array to be resused to read another file.
+void get_words_from_file( char *file_name, char **words, int *word_lengths, int *num_words );
 
 
 

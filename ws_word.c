@@ -6,10 +6,24 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-
 #include "my_util.h"
 
 #include "ws_word.h"
+
+////////////////////////////////////////
+// PROJECT 2 COMP 3220
+// Wordsort (ws)
+// Glenn Hazelwood
+// 11/3/2017
+//
+// ws_word.c
+//
+// Implementation file for ws_word_t, a data type
+// for storing a word, it's length, 
+// its scrabble score and frequency
+// count. Also provides functions for a
+// linked list of ws_word_ts
+////////////////////////////////////////
 
 // Get scrabble score for a letter by lookup
 static int scrabble_letter_scores[26][2] = {
@@ -48,7 +62,8 @@ int calc_scrabble_score( char *word, int word_len ) {
 } // end of calc_scrabble_score( ...
 
 
-
+// Free all the space allocated for ws_words
+// linked list and the char arrays in each node
 void destroy_ws_words( ws_word_t *ws_words ) {
    assert( ws_words != NULL );
 
@@ -113,7 +128,7 @@ ws_word_t *create_ws_word( char *word, int word_len ) {
       __func__, word_len ); 
 
    // Allocate the word array in the new ws_word_t node
-   MALLOC_AND_CHECK_ERROR( new_ws_word->word, char, ( word_len + 1 ) );
+   MALLOC_AND_CHECK_ERROR( new_ws_word->word, char, MAX_NUM_CHARS );
 
    // Set the word
    strcpy( new_ws_word->word, word );
@@ -146,6 +161,10 @@ ws_word_t *create_ws_word( char *word, int word_len ) {
       __func__, 
       ( ( new_ws_word == NULL ) ? "Ugh-oh" : "ok" )
    );
+
+   // Set count
+   new_ws_word->count = 0;
+
    return new_ws_word;
 
 } // end of ws_word_t *create_ws_word( ...
@@ -183,7 +202,7 @@ void print_ws_words( int num_words_to_print, ws_word_t *ws_words, bool do_unique
    } // end of else 
    printf( "\n" ); 
 
-   // Rest of the lines
+   // Print the rest of the lines
    while( ( print_count < num_words_to_print ) && ( curr_ws_word != NULL ) ) {
       // If do_unique skip over words with count > 1
       if ( ( !do_unique ) || ( do_unique && ( curr_ws_word->count == 1 ) ) ) {
@@ -206,37 +225,6 @@ void print_ws_words( int num_words_to_print, ws_word_t *ws_words, bool do_unique
 } // end of print_ws_words( ...
 
 
-// Normal insert. No consideration of order
-/*
-ws_word *insert_ws_word( ws_word_t *new_ws_word, ws_word_t *ws_words, int num_words ) {
-   assert( new_ws_word != NULL );
-   
-   if ( !is_ws_words_empty( ws_words ) ) {
-      HDEBUG_PRINTF( "Inside %s(): ws_words not empty. Inserting '%s'\n",
-         __func__, new_ws_word->word ); 
-      ws_word_t *old_next = ws_words->next;
-      ws_words->next = new_ws_word;
-      new_ws_word->count++;
-      new_ws_word->next = old_next;
-   } else {
-      HDEBUG_PRINTF( "Inside %s(): ws_words was empty. This is the first insertion.\n", 
-         __func__ ); 
-      ws_words = new_ws_word;
-   }
-   HDEBUG_PRINTF( "Inside %s(): new_ws_word is %p\n", 
-      __func__, new_ws_word ); 
-   HDEBUG_PRINTF( "Inside %s(): ws_words is %p\n", 
-      __func__, ws_words ); 
-
-   // Extra check. Print after insertion!
-   HDEBUG_PRINTF( "Inside %s(): PRINTING AFTER INSERTION of '%s'\n", 
-      __func__, new_ws_word->word ); 
-   print_ws_words( num_words, ws_words, false );
-
-   return ws_words;
-}
-*/
-
 ///////////////////////////////////////////////
 // LEXICOGRAPHICAL WORD COMPARISON FUNCTIONS
 ///////////////////////////////////////////////
@@ -257,11 +245,10 @@ int word_cmp( const ws_word_t *left, const ws_word_t *right ) {
        __func__, left->word, right->word ); 
    }
 
-
    return strcmp( left->word, right->word );
 }
 
-
+// Reverse version
 int word_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
    assert( left != NULL );
    assert( right != NULL );
@@ -282,6 +269,7 @@ int word_len_cmp( const ws_word_t *left, const ws_word_t *right ) {
 }
 
 
+// Reverse version
 int word_len_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
    assert( left != NULL );
    assert( right != NULL );
@@ -301,6 +289,7 @@ int word_as_num_cmp( const ws_word_t *left, const ws_word_t *right ) {
    return ( atoi( left->word ) - atoi( right->word ) );
 }
 
+// Reverse version
 int word_as_num_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
    assert( left != NULL );
    assert( right != NULL );
@@ -322,6 +311,7 @@ int scrabble_score_cmp( const ws_word_t *left, const ws_word_t *right ) {
 }
 
 
+// Reverse version
 int scrabble_score_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
    assert( left != NULL );
    assert( right != NULL );
@@ -331,6 +321,10 @@ int scrabble_score_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
 
 
 // Comparison Function Selector Function
+// Highlight of this class-- FUNCTION POINTERS!!
+// Returns function pointer to a function that returns an int and takes in a constant ws_word_t pointer
+// for the left side of the comparison and another constant ws_word_t pointer for the right side of the
+// comparison
 int ( *select_cmp_func( int select, bool do_reverse ) ) ( const ws_word_t *left, const ws_word_t *right ) {
    int ( *func_ptr ) ( const ws_word_t *left, const ws_word_t *right );
 
@@ -443,6 +437,7 @@ ws_word_t *insert_ws_word_sorted( ws_word_t *new_ws_word, ws_word_t *ws_words,
          prev_ptr->next = new_ws_word;
          new_ws_word->next = NULL;
       } else if ( insertion_index == 0 ) {
+
          HDEBUG_PRINTF( "Inside %s(): insertion_index (%d) == 0\n", 
             __func__, insertion_index ); 
 
@@ -469,12 +464,13 @@ ws_word_t *insert_ws_word_sorted( ws_word_t *new_ws_word, ws_word_t *ws_words,
          __func__, new_ws_word->word, new_ws_word ); 
       HDEBUG_PRINTF( "Inside %s(): After insertion to nonempty, ws_words ptr is %p\n", __func__, ws_words ); 
 
-
    } else {
       HDEBUG_PRINTF( "Inside %s(): ws_words is empty. Just insert the new ws_word at %d.\n", 
          __func__, insertion_index ); 
+
       ws_words = new_ws_word;
       ws_words->next = NULL;
+      
       HDEBUG_PRINTF( "Inside %s(): After insertion to empty, ws_words ptr is %p\n", __func__, ws_words ); 
       HDEBUG_PRINTF( "Inside %s(): After insertion to empty, new_ws_word ptr is %p\n\n", __func__, new_ws_word ); 
 
@@ -490,7 +486,7 @@ ws_word_t *insert_ws_word_sorted( ws_word_t *new_ws_word, ws_word_t *ws_words,
    // Extra check. Print after insertion!
    HDEBUG_PRINTF( "Inside %s(): PRINTING AFTER INSERTION of '%s'\n", 
       __func__, new_ws_word->word ); 
-   print_ws_words( l_num_ws_words, ws_words, false, true );
+   //print_ws_words( l_num_ws_words, ws_words, false, true );
 
    *num_ws_words = l_num_ws_words;
    HDEBUG_PRINTF( "Inside %s(): After insertion num words is %d\n",

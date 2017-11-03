@@ -11,22 +11,39 @@
 
 #include "ws_word.h"
 
+///////////////////////////////
+// PROJECT 2 COMP 3220
+// Wordsort (ws)
+// Glenn Hazelwood
+// 11/3/2017
+//
+// main.c
+//
+// Main driver program for ws.
+//////////////////////////////
+
 void usage( char **argv ) {
-   printf( "%s <options> <optional filename>\n", argv[0] );
+   printf( "%s <options> <optional filenames>\n", argv[0] );
+   printf( "Does a sort of the words either in all of the filenames or entered by the user at a prompt.\n" ); 
+   printf( "The options determine sort order.\n" ); 
    printf( "An options can be:\n" );
    printf( "-c <n>      Print the first n results of the sorted list of words\n" );
-   printf( "-r          Print the list of words in sorted in reverse order\n" );
+   printf( "-r          Print the list of words in sorted in reverse order (descending)\n" );
    printf( "-n          Print the list of words sorted as if they were numbers\n" );
    printf( "-l          Print the list of words sorted by lengths\n" );
    printf( "-s          Print the list of words sorted by their Scrabble scores\n" );
-   printf( "-a          Print the list of words sorted lexicographically\n" );
+   printf( "-a          Print the list of words sorted lexicographically (ascending)\n" );
    printf( "-u          Print the list of words with no duplicates ( like uniq -u in UNIX )\n" );
    printf( "-h          Print help\n" );
    printf( "\n" );
    printf( "Most recently seen order option will take precedence. Example:\n" );
    printf( "'ws -s -l file1' will print the words in file1 sorted by their lengths\n" );
    printf( "\n" );
+   printf( "It is possible to stack -r -u and -c <n> with the ordering options-- -n -l -s -a\n" );
+   printf( "Example: ws -rl file1 will print the words in file1 sorted in reverse by their lengths\n" );  
+   printf( "\n" ); 
    printf( "Each pair of -r options cancels each other out.\n" );
+   printf( "Example: ws -r -r file1 will print the words in file1 sorted in normal ascending order" ); 
    printf( "\n" );
    printf( "Trailing punctuation is considered part of the word.\n" );
    printf( "\n" );
@@ -73,7 +90,7 @@ int main( int argc, char** argv ) {
    bool do_reverse = false;
    bool do_unique = false;
    bool do_first_n = false;
-   
+   bool show_count = false; 
    int opt;
 
    while( ( opt = getopt( argc, argv, "rnlsauhc:" ) ) != -1 ) {
@@ -191,7 +208,7 @@ int main( int argc, char** argv ) {
    if ( num_files > 0 ) {
       file_index = 0;
          
-      MALLOC_AND_CHECK_ERROR( file_names, char*, num_file_names_bytes );
+      MALLOC_AND_CHECK_ERROR( file_names, char*, MAX_NUM_CHARS );
 
       // opt_ind is first non-option argument
       for ( int i = optind; i < argc; i++ ) {
@@ -219,7 +236,7 @@ int main( int argc, char** argv ) {
          HDEBUG_PRINTF( "Inside %s(): Need to get input from file %d: %s\n", 
             __func__, file_index, file_names[file_index] ); 
          
-         get_words_from_file( file_names[file_index], words, &num_words );
+         get_words_from_file( file_names[file_index], words, word_lengths, &num_words );
 
          HDEBUG_PRINTF( "Inside %s(): file %s\t\tAfter check of file %d\n", 
             __func__, file_names[file_index], file_index ); 
@@ -231,7 +248,6 @@ int main( int argc, char** argv ) {
       } // end of for ( int i = opt_ind; i < argc; i++ )
 
    } else {
-      
       
       HDEBUG_PRINTF( "Inside %s(): Need to get input from user: \n", __func__ ); 
 
@@ -266,10 +282,9 @@ int main( int argc, char** argv ) {
 
             // Try to allocate array for word
             // Exit if error
-            MALLOC_AND_CHECK_ERROR( words[num_words], char, ( token_len + 1 ) );
+            MALLOC_AND_CHECK_ERROR( words[num_words], char, MAX_NUM_CHARS );
 
             strcpy( words[num_words], token_str );
-            words[num_words][token_len] = '\0';
 
             HDEBUG_PRINTF( "Inside %s():\tWhile loop. Word %d is %s\n", 
                __func__, num_words, words[num_words] ); 
@@ -281,14 +296,14 @@ int main( int argc, char** argv ) {
          } // end of while( token_str != NULL )
       } // end of while( fgets(line, MAX_NUM_CHARS, stdin ) != NULL )
 
-      print_order_select( order_select );
+      //print_order_select( order_select );
       HDEBUG_PRINTF( "\n" ); 
 
    } // end of else
 
    HDEBUG_PRINTF( "Inside %s(): Num words read in is %d\n", 
       __func__, num_words ); 
-
+   
    // Make a linked list of ws_word_t's based on the words
    for( int i = 0; i < num_words; i++ ) {
       
@@ -323,9 +338,9 @@ int main( int argc, char** argv ) {
    }
 
    HDEBUG_PRINTF( "Inside %s(): Final Print of Sorted Words: \n", __func__ ); 
-   print_ws_words( num_print_words, ws_words_head, do_unique, true );
-
+   print_ws_words( num_print_words, ws_words_head, do_unique, show_count );
+   
    destroy_ws_words( ws_words_head );
-
+   
    return EXIT_SUCCESS;
 } 
