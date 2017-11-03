@@ -29,7 +29,7 @@
 
 #define MAX_NUM_CHARS 80
 #define MAX_NUM_FILES 100
-#define MAX_NUM_WORDS 100
+#define MAX_NUM_WORDS 1000
 
 #ifndef MALLOC_AND_CHECK_ERROR 
 #   define MALLOC_AND_CHECK_ERROR(ptr, type, nbytes) \
