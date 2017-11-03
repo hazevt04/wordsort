@@ -11,8 +11,6 @@
 
 #include "ws_word.h"
 
-
-
 void usage( char **argv ) {
    printf( "%s <options> <optional filename>\n", argv[0] );
    printf( "An options can be:\n" );
@@ -176,21 +174,24 @@ int main( int argc, char** argv ) {
    ws_word_t *ws_words_head = NULL;
    ws_word_t *new_ws_word = NULL;
    
-   if ( ws_words_head == NULL ) {
-      HDEBUG_PRINTF( "Inside %s(): ws_words_head is NULL!\n", __func__ ); 
-   } else {
-      HDEBUG_PRINTF( "Inside %s(): What the fuck.\n", __func__ ); 
+   // Try to allocate arrays for line and token_str.
+   // Exit if errors
+   MALLOC_AND_CHECK_ERROR( line, char, MAX_NUM_CHARS );
+   MALLOC_AND_CHECK_ERROR( token_str, char, MAX_NUM_CHARS );
+
+   MALLOC_AND_CHECK_ERROR( word_lengths, int, ( MAX_NUM_WORDS ) );
+   MALLOC_AND_CHECK_ERROR( words, char*, ( MAX_NUM_WORDS ) );
+   for( int i = 0; i < MAX_NUM_WORDS; i++ ) {
+      MALLOC_AND_CHECK_ERROR( words[i], char, MAX_NUM_CHARS );
    } 
-
-   if ( is_ws_words_empty( ws_words_head ) == true ) {
-      HDEBUG_PRINTF( "Inside %s(): EMPTY\n", __func__ ); 
-   } else {
-      HDEBUG_PRINTF( "Inside %s(): HOW THE FUCK IS THIS NOT EMPTY?\n", __func__ ); 
-   }
-
+  
+   int num_file_names_bytes = num_files * sizeof( char * );
+   int file_name_len = 0;
+   char full_file_name[MAX_NUM_CHARS];
    if ( num_files > 0 ) {
       file_index = 0;
-      file_names = ( char** )malloc( num_files * sizeof( char * ) );
+         
+      MALLOC_AND_CHECK_ERROR( file_names, char*, num_file_names_bytes );
 
       // opt_ind is first non-option argument
       for ( int i = optind; i < argc; i++ ) {
@@ -204,23 +205,34 @@ int main( int argc, char** argv ) {
          HDEBUG_PRINTF( "Inside %s(): argv_len is %d\n", 
             __func__, argv_len ); 
 
-         file_names[file_index] = ( char* )malloc( argv_len + 1 );
-         file_names[file_index][argv_len] = '\0'; 
+         MALLOC_AND_CHECK_ERROR( file_names[file_index], char, MAX_NUM_CHARS );
+        
+         sprintf( full_file_name, "/home/%s/intclabs/class/project2/%s",
+            getenv("USER"), argv[i] );
 
-         strcpy( file_names[file_index], argv[i] );
+         strcpy( file_names[file_index], full_file_name );
+
+         file_name_len = strlen( file_names[file_index] );
+         HDEBUG_PRINTF( "Inside %s(): File name len is %d\n", __func__,
+              file_name_len ); 
+
+         HDEBUG_PRINTF( "Inside %s(): Need to get input from file %d: %s\n", 
+            __func__, file_index, file_names[file_index] ); 
+         
+         get_words_from_file( file_names[file_index], words, &num_words );
+
+         HDEBUG_PRINTF( "Inside %s(): file %s\t\tAfter check of file %d\n", 
+            __func__, file_names[file_index], file_index ); 
+         HDEBUG_PRINTF( "Inside %s(): file %s num_words is %d\n", 
+            __func__, file_names[file_index], num_words ); 
+         
          file_index++;
-
+            
       } // end of for ( int i = opt_ind; i < argc; i++ )
 
    } else {
       
-      // Try to allocate arrays for line and token_str.
-      // Exit if errors
-      MALLOC_AND_CHECK_ERROR( line, char, MAX_NUM_CHARS );
-      MALLOC_AND_CHECK_ERROR( token_str, char, MAX_NUM_CHARS );
-
-      MALLOC_AND_CHECK_ERROR( word_lengths, int, ( MAX_NUM_WORDS ) );
-      MALLOC_AND_CHECK_ERROR( words, char*, ( MAX_NUM_WORDS ) );
+      
       HDEBUG_PRINTF( "Inside %s(): Need to get input from user: \n", __func__ ); 
 
       printf( "Enter words (100 max, each a max of 80 characters; "

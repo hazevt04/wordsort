@@ -16,10 +16,6 @@
 #define S_ORDER_SELECT ( ( unsigned int ) 1 << 2 )
 #define A_ORDER_SELECT ( ( unsigned int ) 1 << 3 )
 
-#define MAX_NUM_CHARS 80
-#define MAX_NUM_FILES 100
-#define MAX_NUM_WORDS 100
-
 // Forward declaration to allow for next
 // pointer to be declared within the struct
 typedef struct ws_word_t ws_word_t;
