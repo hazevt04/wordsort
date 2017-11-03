@@ -51,7 +51,7 @@ ws_word_t *create_ws_word( char *word, int word_len );
 void print_ws_words( int num_words_to_print, ws_word_t *ws_words, bool do_unique );
 
 // Normal insert. No consideration of order
-void insert_ws_word( ws_word_t *new_ws_word, ws_word_t *ws_words );
+//void insert_ws_word( ws_word_t *new_ws_word, ws_word_t *ws_words, int num_words );
 
 // Comparison Functions
 int word_cmp( const ws_word_t *left, const ws_word_t *right );
@@ -69,7 +69,7 @@ int ( *select_cmp_func( int select, bool do_reverse ) ) ( const ws_word_t *left,
 // If unique flag is set, don't insert it again
 // Last arg is a function pointer to a comparison function which is used
 // to determine where the new ws_word_t is inserted into the linked list
-void insert_ws_word_sorted( ws_word_t *new_ws_word, 
+ws_word_t *insert_ws_word_sorted( ws_word_t *new_ws_word, 
       ws_word_t *ws_words, int *num_ws_words, bool do_unique,
       int ( * )( const ws_word_t *, const ws_word_t * ) );
 

@@ -164,16 +164,29 @@ int main( int argc, char** argv ) {
    int argv_len;
 
    char* line;
+   int line_len = 0;
    char* token_str;
    int token_len = 0;
-   char* word;
-   int word_len = 0;
+   char** words;
+   int* word_lengths;
+   int num_words;
+
    int num_ws_words = 0;
-   ws_word_t *ws_words_head;
-   ws_word_t *new_ws_word;
+   ws_word_t *ws_words_head = NULL;
+   ws_word_t *new_ws_word = NULL;
    
-   initialize_ws_words( ws_words_head );
-   
+   if ( ws_words_head == NULL ) {
+      HDEBUG_PRINTF( "Inside %s(): ws_words_head is NULL!\n", __func__ ); 
+   } else {
+      HDEBUG_PRINTF( "Inside %s(): What the fuck.\n", __func__ ); 
+   } 
+
+   if ( is_ws_words_empty( ws_words_head ) == true ) {
+      HDEBUG_PRINTF( "Inside %s(): EMPTY\n", __func__ ); 
+   } else {
+      HDEBUG_PRINTF( "Inside %s(): HOW THE FUCK IS THIS NOT EMPTY?\n", __func__ ); 
+   }
+
    if ( num_files > 0 ) {
       file_index = 0;
       file_names = ( char** )malloc( num_files * sizeof( char * ) );
@@ -205,12 +218,22 @@ int main( int argc, char** argv ) {
       MALLOC_AND_CHECK_ERROR( line, char, MAX_NUM_CHARS );
       MALLOC_AND_CHECK_ERROR( token_str, char, MAX_NUM_CHARS );
 
-      HDEBUG_PRINTF( "Inside %s(): Need to get input from user: ", __func__ ); 
+      MALLOC_AND_CHECK_ERROR( word_lengths, int, ( MAX_NUM_WORDS ) );
+      MALLOC_AND_CHECK_ERROR( words, char*, ( MAX_NUM_WORDS ) );
+      HDEBUG_PRINTF( "Inside %s(): Need to get input from user: \n", __func__ ); 
 
       printf( "Enter words (100 max, each a max of 80 characters; "
             "Cntrl+D to exit): " ); 
 
       while( fgets(line, MAX_NUM_CHARS, stdin ) != NULL ) {
+         line_len = strlen( line );
+         HDEBUG_PRINTF( "Inside %s(): Line is %s\n", __func__, line ); 
+         HDEBUG_PRINTF( "Inside %s(): Line len is %d\n", __func__, line_len ); 
+
+         if ( num_words >= MAX_NUM_WORDS ) {
+            printf( "No More Words. Max number is %d\n", MAX_NUM_WORDS ); 
+            break;
+         }
          token_str = strtok( line, " \n" );
          HDEBUG_PRINTF( "Inside %s(): token is '%s'\n", 
             __func__, token_str ); 
@@ -219,33 +242,28 @@ int main( int argc, char** argv ) {
             token_len = strlen( token_str );
             
             HDEBUG_PRINTF( "Inside %s():\tWhile loop. Word Num is %d:\n", 
-               __func__, num_ws_words ); 
+               __func__, num_words ); 
             HDEBUG_PRINTF( "Inside %s():\tWhile loop. Token len is %d:\n", 
                __func__, token_len ); 
             
-            word_len = token_len;
+            word_lengths[num_words] = token_len;
 
-            HDEBUG_PRINTF( "Inside %s():\tWhile loop. Word len is %d", 
-               __func__, word_len ); 
+            HDEBUG_PRINTF( "Inside %s():\tWhile loop. Word len %d is %d\n", 
+               __func__, num_words, word_lengths[num_words] ); 
 
             // Try to allocate array for word
             // Exit if error
-            MALLOC_AND_CHECK_ERROR( word, char, ( word_len + 1 ) );
+            MALLOC_AND_CHECK_ERROR( words[num_words], char, ( token_len + 1 ) );
 
-            strcpy( word, token_str );
-            word[word_len] = '\0';
+            strcpy( words[num_words], token_str );
+            words[num_words][token_len] = '\0';
 
-            // Try to make a new ws_word_t node.
-            // This won't do anything if -u and the word is already in ws_words
-            new_ws_word = create_ws_word( word, word_len );
-            insert_ws_word_sorted( new_ws_word, ws_words_head, &num_ws_words, 
-               do_unique, comp_func );
-
-            HDEBUG_PRINTF( "Inside %s(): After insert_ws_word_sorted for word %s num_ws_words is %d\n", 
-               __func__, word, num_ws_words );
+            HDEBUG_PRINTF( "Inside %s():\tWhile loop. Word %d is %s\n", 
+               __func__, num_words, words[num_words] ); 
+            num_words++;
 
             // Get the next token from line
-            token_str = strtok( NULL, " " );
+            token_str = strtok( NULL, " \n" );
 
          } // end of while( token_str != NULL )
       } // end of while( fgets(line, MAX_NUM_CHARS, stdin ) != NULL )
@@ -253,20 +271,46 @@ int main( int argc, char** argv ) {
       print_order_select( order_select );
       HDEBUG_PRINTF( "\n" ); 
 
-      int num_print_words;
-      if ( do_first_n ) {
-         num_print_words = c_flag_num_words;
-         HDEBUG_PRINTF( "Inside %s(): Due to -c option, only printing %d words\n",
-            __func__, num_print_words ); 
+   } // end of else
 
-      } else {
-         num_print_words = num_ws_words;
-         HDEBUG_PRINTF( "Inside %s(): No -c option, printing all %d words\n",
-            __func__, num_print_words ); 
-      }
-      HDEBUG_PRINTF( "Inside %s(): Print Sorted Words", __func__ ); 
-      print_ws_words( num_print_words, ws_words_head, do_unique );
+   HDEBUG_PRINTF( "Inside %s(): Num words read in is %d\n", 
+      __func__, num_words ); 
+
+   // Make a linked list of ws_word_t's based on the words
+   for( int i = 0; i < num_words; i++ ) {
+      
+      // make a new ws_word_t node.
+      new_ws_word = create_ws_word( words[i], word_lengths[i] );
+
+      assert ( new_ws_word != NULL );
+      // This won't do anything if -u and the word is already in ws_words
+      ws_words_head = insert_ws_word_sorted( new_ws_word, ws_words_head, &num_ws_words, 
+         do_unique, comp_func );
+
+      HDEBUG_PRINTF( "Inside %s(): After insert_ws_word_sorted for word %s num_ws_words is %d\n", 
+         __func__, words[i], num_ws_words );
+      HDEBUG_PRINTF( "Inside %s(): Loop index is %d and num_ws_words is %d\n", __func__,
+           i, num_ws_words ); 
+      HDEBUG_PRINTF( "Inside %s(): new_ws_word is %p\n", __func__, new_ws_word ); 
+      HDEBUG_PRINTF( "Inside %s(): ws_words_head is %p\n", __func__, ws_words_head ); 
    }
+
+   int num_print_words;
+   if ( do_first_n ) {
+      num_print_words = c_flag_num_words;
+      HDEBUG_PRINTF( "Inside %s(): Due to -c option, only printing %d words\n",
+         __func__, num_print_words ); 
+
+   } else {
+      num_print_words = num_ws_words;
+      HDEBUG_PRINTF( "Inside %s(): No -c option, printing %d %s.\n",
+         __func__, num_print_words,
+         ( num_print_words == 1 ) ? "word" : "words"
+      ); 
+   }
+
+   HDEBUG_PRINTF( "Inside %s(): Final Print of Sorted Words: \n", __func__ ); 
+   print_ws_words( num_print_words, ws_words_head, do_unique );
 
 
    return EXIT_SUCCESS;
