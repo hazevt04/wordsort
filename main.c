@@ -90,7 +90,7 @@ int main( int argc, char** argv ) {
    bool do_reverse = false;
    bool do_unique = false;
    bool do_first_n = false;
-   bool show_count = false; 
+   bool show_count = true; 
    int opt;
 
    while( ( opt = getopt( argc, argv, "rnlsauhc:" ) ) != -1 ) {
