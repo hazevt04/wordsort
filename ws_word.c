@@ -375,7 +375,7 @@ ws_word_t *insert_ws_word_sorted( ws_word_t *new_ws_word, ws_word_t *ws_words,
    int found_index = 0;
    int l_num_ws_words = *num_ws_words;
    HDEBUG_PRINTF( "Inside %s(): At start l_num_ws_words is %d\n", __func__, l_num_ws_words ); 
-   if ( do_unique && ( ws_words != NULL ) ) {
+   if ( ( ws_words != NULL ) ) {
       
       HDEBUG_PRINTF( "Inside %s(): do_unique specified\n", 
          __func__ ); 
