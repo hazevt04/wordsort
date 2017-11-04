@@ -223,10 +223,14 @@ int main( int argc, char** argv ) {
             __func__, argv_len ); 
 
          MALLOC_AND_CHECK_ERROR( file_names[file_index], char, MAX_NUM_CHARS );
-        
-         sprintf( full_file_name, "/home/%s/intclabs/class/project2/%s",
-            getenv("USER"), argv[i] );
-
+       
+			char cwd[MAX_NUM_CHARS];
+			if ( getcwd( cwd, sizeof( cwd ) ) != NULL ) {	
+				sprintf( full_file_name, "%s/%s",
+					cwd, argv[i] );
+			} else {
+				fprintf( stderr, "ERROR due to getcwd()\n" );
+			}
          strcpy( file_names[file_index], full_file_name );
 
          file_name_len = strlen( file_names[file_index] );
