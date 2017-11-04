@@ -38,27 +38,41 @@ static int scrabble_letter_scores[26][2] = {
 int calc_scrabble_score( char *word, int word_len ) {
    assert( word != NULL );
    int scrabble_score = 0;
-
+	int scrabble_index = 0;
+		
    for( int i = 0; i < word_len; i++ ) {
       // Get the scrabbble score for the character at index i in the word
-      int scrabble_index = tolower( word[i] ) - 'a';
+      scrabble_index = tolower( word[i] ) - 'a';
 
-      HDEBUG_PRINTF( "Inside %s(): word[%d] (lowercase) is %c\n", 
-         __func__, i, tolower( word[i] ) ); 
-      HDEBUG_PRINTF( "Inside %s(): 'a' as an int is %d\n", __func__, ( ( int )'a' ) ); 
-      HDEBUG_PRINTF( "Inside %s(): %d: scrabble index is %d, '%c'\n", 
-         __func__, i, scrabble_index, scrabble_letter_scores[scrabble_index][0]  ); 
+		HDEBUG_PRINTF( "Inside %s() scrabble_index for %c ( %d ) initially is %d\n", 
+			__func__, tolower( word[i] ), tolower( word[i] ), scrabble_index );
 
-      HDEBUG_PRINTF( "Inside %s(): scrabble score for '%c' is %d\n\n", __func__,
-        scrabble_letter_scores[scrabble_index][0], scrabble_letter_scores[scrabble_index][1]  ); 
+		if ( ( scrabble_index < 26 ) && ( scrabble_index >= 0 ) ) {
+			
+			// if index would be out of bounds, dont add to the scrabble score
+			HDEBUG_PRINTF( "Inside %s(): character %d (lowercase) is %c\n", 
+				__func__, i, tolower( word[i] ) ); 
+			HDEBUG_PRINTF( "Inside %s(): 'a' as an int is %d\n", __func__, ( ( int )'a' ) ); 
+			HDEBUG_PRINTF( "Inside %s(): character %d: scrabble index is %d, '%c'\n", 
+				__func__, i, scrabble_index, scrabble_letter_scores[scrabble_index][0]  ); 
 
-      // Accumulate the scrabble score via lookup
-      scrabble_score += scrabble_letter_scores[scrabble_index][1];
-   }
+			HDEBUG_PRINTF( "Inside %s(): scrabble score for '%c' is %d\n\n", __func__,
+			  scrabble_letter_scores[scrabble_index][0], scrabble_letter_scores[scrabble_index][1]  ); 
 
-   HDEBUG_PRINTF( "Inside %s(): Scrabble Score for %s is %d\n\n", 
-      __func__, word, scrabble_score ); 
-   return scrabble_score; 
+			// Accumulate the scrabble score via lookup
+			scrabble_score += scrabble_letter_scores[scrabble_index][1];
+		} else {
+
+			HDEBUG_PRINTF( "Inside %s() character %d, '%c' is not a valid scrabble letter.\n", 
+				__func__, i, word[i] ); 
+		}
+	
+	} // end of for loop
+	
+	HDEBUG_PRINTF( "Inside %s(): Scrabble Score for %s is %d\n\n", 
+		__func__, word, scrabble_score ); 
+
+	return scrabble_score; 
 } // end of calc_scrabble_score( ...
 
 
