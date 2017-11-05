@@ -3,33 +3,54 @@
 ws \- sort words in multiple files or entered at prompt
 .SH SYNOPSIS
 .B ws
-[\fB\-c\fR \fINUM\fR]
-
-
-
-%s <options> <optional filenames>
- Does a sort of the words either in all of the filenames or entered by the user at a prompt.  
- The options determine sort order.  
- An options can be: 
- -c <n>      Print the first n results of the sorted list of words 
- -r          Print the list of words in sorted in reverse order descending 
- -n          Print the list of words sorted as if they were numbers 
- -l          Print the list of words sorted by lengths 
- -s          Print the list of words sorted by their Scrabble scores 
- -a          Print the list of words sorted lexicographically ascending 
- -u          Print the list of words, omitting any that are duplicated like uniq -u in UNIX 
- -h          Print help 
- 
- Most recently seen order option will take precedence. Example: 
- 'ws -s -l file1' will print the words in file1 sorted by their lengths 
- 
- It is possible to stack -r -u and -c <n> with the ordering options-- -n -l -s -a 
- Example: ws -rl file1 will print the words in file1 sorted in reverse by their lengths   
-   
- Each pair of -r options cancels each other out. 
- Example: ws -r -r file1 will print the words in file1 sorted in normal ascending order  
-  
- Trailing punctuation is considered part of the word. 
-  
- If no filename is provided then the words to be sorted will be entered 
- at the command line. Cntrl+D when done. 
+[\fIOPTIONS\fR]
+[\fB\-c\fR \fINUM_WORDS\fR]
+[\fIFILE\fR...]
+.SH DESCRIPTION
+.TP
+\fBws\fR sorts words in the named input files or entered at a prompt. If no filename is provided, then the user is prompted to enter no more than 100 words each no longer than 256 characters. The user will enter \fICntrl+D\fR when done. If filenames are provided their names are also expected to be no more than 256 characters. In either the case of file input or stdin input, trailing punctuation is considered to be part of the word.  
+.PP
+The most recently entered ordering flag will take precedence. Any of the printng options can be combined with the sorting options. 
+.SH OPTIONS
+.TP
+.BR \-h
+Output a usage message and then exit.
+.TP
+.B Printing Options
+.TP
+.BR \-c " " \fINUM_WORDS\fR
+Set the number of sorted words to display. \fINUM_WORDS\fR is required with the -c option.
+.TP
+.BR \-u
+Print the list of words, omitting any that are duplicated like uniq -u in UNIX.
+.TP
+.BR \-r
+Print the list of words in sorted in reverse order descending. Multiple -r's cancel out.
+.TP
+.B Sort Order Options
+.TP
+.BR \-n
+Print the list of words sorted as if they were numbers. Non-numerical words will be considered 0. For example: 1,2,one will be sorted as one,1,2.
+.TP
+.BR \-l
+Print the list of words sorted by lengths. 
+.TP
+.BR \-s
+Print the list of words sorted by their Scrabble scores. Non-alphabet characters will not count towards the Scrabble score.
+.TP
+.BR \-a
+Print the list of words sorted lexicographically ascending. This is the default sort order.
+.SH EXAMPLES
+.TP
+\fBws\fR \fI-rn file1\fR prints the words in file1 in reverse order as if they were numbers. Any word that is not a number is considered zero.
+.TP
+\fBws\fR \fI-rr file1\fR prints the words in file1 in ascending lexicographical order.
+.TP
+\fBws\fR \fI-rlns -c 3 file1\fR prints the words in  file1 with the lowest 3 Scrabble scores in ascending score order.
+.SH AUTHOR
+.TP
+Written by Glenn Hazelwood.
+.SH SEE ALSO
+.TP
+.B Regular Manual Pages
+sort(1), wc(1), uniq(1)

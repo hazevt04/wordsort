@@ -1,6 +1,6 @@
 TARGET_EXEC = ws
 CC = gcc
-CFLAGS = -g -I../../ $(DEBUG)
+CFLAGS = -g -I. $(DEBUG)
 
 .PHONY: default all clean
 
@@ -19,7 +19,7 @@ debug: $(TARGET_EXEC)
 # automagically include all .c and *.h files 
 # in current directory
 OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
-HEADERS = $(wildcard *.h) ../../my_util.h
+HEADERS = $(wildcard *.h)
 
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
