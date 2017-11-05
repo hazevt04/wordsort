@@ -33,7 +33,7 @@ void usage( char **argv ) {
    printf( "-l          Print the list of words sorted by lengths\n" );
    printf( "-s          Print the list of words sorted by their Scrabble scores\n" );
    printf( "-a          Print the list of words sorted lexicographically (ascending)\n" );
-   printf( "-u          Print the list of words with no duplicates ( like uniq -u in UNIX )\n" );
+   printf( "-u          Print the list of words, omitting any that are duplicated (like uniq -u in UNIX)\n" );
    printf( "-h          Print help\n" );
    printf( "\n" );
    printf( "Most recently seen order option will take precedence. Example:\n" );
@@ -52,6 +52,9 @@ void usage( char **argv ) {
    printf( "\n" ); 
 }
 
+
+// Print the ordering setting
+// based on "one-hot" flag values
 void print_order_select( int order_select ) {
    HDEBUG_PRINTF( "Inside %s(): order_select (in hex) is %#x\n", 
       __func__, order_select ); 
@@ -75,8 +78,11 @@ void print_order_select( int order_select ) {
          exit(EXIT_FAILURE);
    }
 
-}
+} // end of print_order_select
 
+
+// Main Driver Function
+// for wordsort
 int main( int argc, char** argv ) {
    // "One-hot" selecton (only one bit can be set at a time)
    // The last option passed in getopt will ultimately
@@ -196,8 +202,17 @@ int main( int argc, char** argv ) {
    MALLOC_AND_CHECK_ERROR( line, char, MAX_NUM_CHARS );
    MALLOC_AND_CHECK_ERROR( token_str, char, MAX_NUM_CHARS );
 
+   // Try to allocate an array for the lengths of the words
+   // Exit if error
    MALLOC_AND_CHECK_ERROR( word_lengths, int, ( MAX_NUM_WORDS ) );
+
+   // Try to allocate an array of char* pointers
+   // Exit if error
    MALLOC_AND_CHECK_ERROR( words, char*, ( MAX_NUM_WORDS ) );
+   
+   // For each of the the char* pointers
+   // try to allocate an array for a word
+   // Exit if error
    for( int i = 0; i < MAX_NUM_WORDS; i++ ) {
       MALLOC_AND_CHECK_ERROR( words[i], char, MAX_NUM_CHARS );
    } 
@@ -208,7 +223,7 @@ int main( int argc, char** argv ) {
    if ( num_files > 0 ) {
       file_index = 0;
          
-      MALLOC_AND_CHECK_ERROR( file_names, char*, MAX_NUM_CHARS );
+      MALLOC_AND_CHECK_ERROR( file_names, char*, MAX_NUM_FILES );
 
       // opt_ind is first non-option argument
       for ( int i = optind; i < argc; i++ ) {
@@ -263,10 +278,7 @@ int main( int argc, char** argv ) {
          HDEBUG_PRINTF( "Inside %s(): Line is %s\n", __func__, line ); 
          HDEBUG_PRINTF( "Inside %s(): Line len is %d\n", __func__, line_len ); 
 
-         if ( num_words >= MAX_NUM_WORDS ) {
-            printf( "No More Words. Max number is %d\n", MAX_NUM_WORDS ); 
-            break;
-         }
+
          token_str = strtok( line, " \n" );
          HDEBUG_PRINTF( "Inside %s(): token is '%s'\n", 
             __func__, token_str ); 
@@ -293,6 +305,12 @@ int main( int argc, char** argv ) {
             HDEBUG_PRINTF( "Inside %s():\tWhile loop. Word %d is %s\n", 
                __func__, num_words, words[num_words] ); 
             num_words++;
+
+            // If there is no more room for words, break out of the while loop
+            if ( num_words == MAX_NUM_WORDS ) {
+               printf( "No More Words. Max number is %d\n", MAX_NUM_WORDS ); 
+               break;        
+            } // end of if num_words >= MAX_NUM_WORDS
 
             // Get the next token from line
             token_str = strtok( NULL, " \n" );

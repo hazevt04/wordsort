@@ -197,11 +197,11 @@ void print_ws_words( int num_words_to_print, ws_word_t *ws_words, bool do_unique
    ws_word_t *curr_ws_word = ws_words;
    if ( show_counts ) {
       // Line 1
-      printf( "%50s   %5s   %15s   %6s\n",
-         "Word","Length","Scrabble Score", "Counts" );
+      printf( "%50s   %5s   %15s   %15s\n",
+         "Word","Length","Scrabble Score", "Frequency Count" );
       
       // Line 2
-      for( int i = 0; i < 86; i++ ) {
+      for( int i = 0; i < 95; i++ ) {
          printf( "=" );
       } 
 
@@ -221,7 +221,7 @@ void print_ws_words( int num_words_to_print, ws_word_t *ws_words, bool do_unique
       // If do_unique skip over words with count > 1
       if ( ( !do_unique ) || ( do_unique && ( curr_ws_word->count == 1 ) ) ) {
          if ( show_counts ) {
-            printf( "%50s   %5d   %15d   %6d\n",
+            printf( "%50s   %5d   %15d   %15d\n",
                curr_ws_word->word, curr_ws_word->word_len, curr_ws_word->scrabble_score,
                curr_ws_word->count
             );
@@ -262,6 +262,7 @@ int word_cmp( const ws_word_t *left, const ws_word_t *right ) {
    return strcmp( left->word, right->word );
 }
 
+
 // Reverse version
 int word_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
    assert( left != NULL );
@@ -271,6 +272,7 @@ int word_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
 
    return strcmp( right->word, left->word );
 }
+
 
 /////////////////////////////////////////
 // WORD LENGTH COMPARISON FUNCTIONS
@@ -291,6 +293,7 @@ int word_len_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
    return right->word_len - left->word_len;
 }
 
+
 /////////////////////////////////////////
 // WORDS AS NUM COMPARISON FUNCTIONS
 /////////////////////////////////////////
@@ -302,6 +305,7 @@ int word_as_num_cmp( const ws_word_t *left, const ws_word_t *right ) {
    
    return ( atoi( left->word ) - atoi( right->word ) );
 }
+
 
 // Reverse version
 int word_as_num_cmp_rev( const ws_word_t *left, const ws_word_t *right ) {
@@ -503,8 +507,10 @@ ws_word_t *insert_ws_word_sorted( ws_word_t *new_ws_word, ws_word_t *ws_words,
    //print_ws_words( l_num_ws_words, ws_words, false, true );
 
    *num_ws_words = l_num_ws_words;
+   
    HDEBUG_PRINTF( "Inside %s(): After insertion num words is %d\n",
       __func__, *num_ws_words ); 
+   
    return ws_words;
 } // end of insert_ws_word_sorted
 
