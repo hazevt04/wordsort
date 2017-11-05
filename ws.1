@@ -1,0 +1,35 @@
+.TH WS 1
+.SH NAME
+ws \- sort words in multiple files or entered at prompt
+.SH SYNOPSIS
+.B ws
+[\fB\-c\fR \fINUM\fR]
+
+
+
+%s <options> <optional filenames>
+ Does a sort of the words either in all of the filenames or entered by the user at a prompt.  
+ The options determine sort order.  
+ An options can be: 
+ -c <n>      Print the first n results of the sorted list of words 
+ -r          Print the list of words in sorted in reverse order descending 
+ -n          Print the list of words sorted as if they were numbers 
+ -l          Print the list of words sorted by lengths 
+ -s          Print the list of words sorted by their Scrabble scores 
+ -a          Print the list of words sorted lexicographically ascending 
+ -u          Print the list of words, omitting any that are duplicated like uniq -u in UNIX 
+ -h          Print help 
+ 
+ Most recently seen order option will take precedence. Example: 
+ 'ws -s -l file1' will print the words in file1 sorted by their lengths 
+ 
+ It is possible to stack -r -u and -c <n> with the ordering options-- -n -l -s -a 
+ Example: ws -rl file1 will print the words in file1 sorted in reverse by their lengths   
+   
+ Each pair of -r options cancels each other out. 
+ Example: ws -r -r file1 will print the words in file1 sorted in normal ascending order  
+  
+ Trailing punctuation is considered part of the word. 
+  
+ If no filename is provided then the words to be sorted will be entered 
+ at the command line. Cntrl+D when done. 
